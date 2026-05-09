@@ -1,854 +1,648 @@
-Manage Slack conversations, channels, users, and search workflows through MCP tools.
+**Your entire Slack workspace, accessible through AI.**
 
-A Model Context Protocol (MCP) server that exposes Slack's API for messaging, channel operations, workspace discovery, and user-scoped automation.
+A Model Context Protocol (MCP) server that exposes Slack's API for messaging, channel management, user discovery, and workspace administration.
 
----
 
 ## Overview
 
-The CL Slack MCP Server provides stateless, token-based Slack API access:
+The Slack MCP Server provides comprehensive access to your Slack workspace:
 
-- Core messaging and thread workflows
-- Channel and workspace discovery tools
-- User and file search capabilities
+- Send, read, edit, delete, and search messages across channels and threads
+- Manage channels — create, archive, invite users, and browse the workspace roster
+- Search files, find users, extract threads, and inspect workspace metadata
 
 Perfect for:
 
-- AI-assisted Slack operations
-- Workflow automation across channels and users
-- Building Slack copilots with MCP-compatible clients
+- AI assistants that need to send or read Slack messages on your behalf
+- Automating channel management, notifications, and team coordination
+- Building tools that integrate Slack with other services and workflows
 
----
 
 ## Tools
 
-<details>
-<summary><code>health_check</code> - Check server readiness and basic connectivity.</summary>
+### Messaging
 
-Returns a lightweight readiness response to confirm the MCP server is running.
+<details>
+<summary><code>send_message</code> — Post a message to a channel</summary>
+
+Posts a message to a Slack channel or direct message, with optional rich formatting via Block Kit.
 
 **Inputs:**
-
-- `none`
+```
+- `channel` (string, required) — Channel ID or name (e.g., #general or C123ABC456)
+- `text` (string, optional) — Plain text message (up to 4000 characters)
+- `blocks` (list, optional) — Slack Block Kit JSON for rich formatting
+- `thread_ts` (string, optional) — Parent message timestamp to reply in a thread
+- `reply_broadcast` (bool, optional) — Also broadcast the reply to the channel (default: false)
+```
 
 **Output:**
 
 ```json
 {
-	"status": "ok",
-	"server": "CL Slack MCP Server"
+  "ok": true,
+  "channel": "C123ABC456",
+  "ts": "1234567890.123456",
+  "message": { "text": "Hello!", "user": "U123" }
 }
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/health_check
-{}
 ```
 
 </details>
 
-<details>
-<summary><code>send_message</code> - Post a message to a channel or direct message.</summary>
 
-Posts text and optional Block Kit content to a Slack conversation.
+<details>
+<summary><code>read_messages</code> — Read message history from a channel</summary>
+
+Retrieves message history from a channel with optional timestamp range filtering.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token (`xoxb-...` or `xoxp-...`)
-- `channel` (string, required) - Channel ID or name
-- `text` (string, optional) - Message text
-- `blocks` (array, optional) - Block Kit JSON
-- `thread_ts` (string, optional) - Parent timestamp for threaded reply
-- `reply_broadcast` (boolean, optional) - Broadcast threaded reply to channel
+```
+- `channel` (string, required) — Channel ID or name
+- `limit` (int, optional) — Number of messages to return (1–100, default: 20)
+- `oldest` (string, optional) — Oldest timestamp cutoff (Unix timestamp)
+- `latest` (string, optional) — Latest timestamp cutoff (Unix timestamp)
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"channel": "C123ABC456",
-	"ts": "1712000000.123456"
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/send_message
-
-{
-	"oauth_token": "xoxp-...",
-	"channel": "C123ABC456",
-	"text": "Hello from MCP"
+  "ok": true,
+  "messages": [{ "type": "message", "text": "Hello!", "user": "U123", "ts": "..." }],
+  "has_more": false
 }
 ```
 
 </details>
 
-<details>
-<summary><code>read_messages</code> - Get message history from a channel.</summary>
 
-Reads recent message history with optional time window filtering.
+<details>
+<summary><code>update_message</code> — Edit an existing message</summary>
+
+Edits the text or blocks of an existing message in a channel.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `channel` (string, required) - Channel ID or name
-- `limit` (integer, optional) - Number of messages (1-100)
-- `oldest` (string, optional) - Lower timestamp bound
-- `latest` (string, optional) - Upper timestamp bound
+```
+- `channel` (string, required) — Channel ID
+- `ts` (string, required) — Timestamp of the message to update
+- `text` (string, optional) — New text content
+- `blocks` (list, optional) — New Block Kit JSON
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"messages": []
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/read_messages
-
-{
-	"oauth_token": "xoxp-...",
-	"channel": "C123ABC456",
-	"limit": 20
+  "ok": true,
+  "channel": "C123ABC456",
+  "ts": "1234567890.123456",
+  "text": "Updated message"
 }
 ```
 
 </details>
 
-<details>
-<summary><code>update_message</code> - Edit an existing message.</summary>
 
-Updates message text or blocks for a specific channel timestamp.
+<details>
+<summary><code>delete_message</code> — Delete a message</summary>
+
+Permanently deletes a message from a channel.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `channel` (string, required) - Channel ID
-- `ts` (string, required) - Message timestamp
-- `text` (string, optional) - Updated text
-- `blocks` (array, optional) - Updated Block Kit payload
+```
+- `channel` (string, required) — Channel ID
+- `ts` (string, required) — Timestamp of the message to delete
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"ts": "1712000000.123456"
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/update_message
-
-{
-	"oauth_token": "xoxp-...",
-	"channel": "C123ABC456",
-	"ts": "1712000000.123456",
-	"text": "Updated message"
+  "ok": true,
+  "channel": "C123ABC456",
+  "ts": "1234567890.123456"
 }
 ```
 
 </details>
 
-<details>
-<summary><code>delete_message</code> - Delete a message.</summary>
 
-Deletes a Slack message by channel and timestamp.
+<details>
+<summary><code>search_messages</code> — Full-text search across workspace messages</summary>
+
+Searches all messages across the workspace using a query string, with sorting options.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `channel` (string, required) - Channel ID
-- `ts` (string, required) - Message timestamp
+```
+- `query` (string, required) — Search query string
+- `sort` (string, optional) — Sort by: score or timestamp (default: score)
+- `sort_dir` (string, optional) — Sort direction: asc or desc (default: desc)
+- `count` (int, optional) — Number of results to return (default: 20)
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"channel": "C123ABC456",
-	"ts": "1712000000.123456"
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/delete_message
-
-{
-	"oauth_token": "xoxp-...",
-	"channel": "C123ABC456",
-	"ts": "1712000000.123456"
+  "ok": true,
+  "messages": {
+    "total": 5,
+    "matches": [{ "text": "...", "channel": { "id": "C123" }, "ts": "..." }]
+  }
 }
 ```
 
 </details>
 
-<details>
-<summary><code>search_messages</code> - Full-text search across workspace messages.</summary>
 
-Searches Slack messages by query with score/timestamp sorting controls.
+<details>
+<summary><code>reply_thread</code> — Post a reply in a message thread</summary>
+
+Posts a reply to a specific thread, with the option to broadcast it to the channel.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `query` (string, required) - Search query
-- `sort` (string, optional) - `score` or `timestamp`
-- `sort_dir` (string, optional) - `asc` or `desc`
-- `count` (integer, optional) - Number of results
+```
+- `channel` (string, required) — Channel ID
+- `thread_ts` (string, required) — Timestamp of the parent message to reply to
+- `text` (string, optional) — Reply text content
+- `blocks` (list, optional) — Block Kit JSON for rich formatting
+- `broadcast` (bool, optional) — Broadcast the reply to the channel (default: false)
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"messages": {
-		"matches": []
-	}
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/search_messages
-
-{
-	"oauth_token": "xoxp-...",
-	"query": "incident postmortem",
-	"count": 10
+  "ok": true,
+  "ts": "1234567890.999999",
+  "message": { "text": "Reply text", "thread_ts": "..." }
 }
 ```
 
 </details>
 
-<details>
-<summary><code>reply_thread</code> - Post a reply in a message thread.</summary>
 
-Adds a thread reply and optionally broadcasts it to the parent channel.
+### Channel Management
+
+<details>
+<summary><code>list_channels</code> — List channels in the workspace</summary>
+
+Returns a paginated list of channels with optional type and archived filtering.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `channel` (string, required) - Channel ID
-- `thread_ts` (string, required) - Parent message timestamp
-- `text` (string, optional) - Reply text
-- `blocks` (array, optional) - Block Kit JSON
-- `broadcast` (boolean, optional) - Broadcast to channel
+```
+- `exclude_archived` (bool, optional) — Skip archived channels (default: true)
+- `limit` (int, optional) — Channels per page (1–100, default: 20)
+- `cursor` (string, optional) — Pagination cursor from response_metadata.next_cursor
+- `types` (string, optional) — Comma-separated channel types: public_channel, private_channel, mpim, im (default: public_channel)
+- `team_id` (string, optional) — Team ID for org-wide apps only
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"thread_ts": "1712000000.123456"
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/reply_thread
-
-{
-	"oauth_token": "xoxp-...",
-	"channel": "C123ABC456",
-	"thread_ts": "1712000000.123456",
-	"text": "Follow-up update"
+  "ok": true,
+  "channels": [{ "id": "C123", "name": "general", "is_private": false }],
+  "response_metadata": { "next_cursor": "cursor-string" }
 }
 ```
 
 </details>
 
-<details>
-<summary><code>list_channels</code> - Browse workspace channels.</summary>
 
-Lists channels with pagination, type filtering, and archived controls.
+<details>
+<summary><code>create_channel</code> — Create a new channel</summary>
+
+Creates a new public or private Slack channel.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `exclude_archived` (boolean, optional) - Exclude archived channels
-- `limit` (integer, optional) - Page size (1-100)
-- `cursor` (string, optional) - Pagination cursor
-- `types` (string, optional) - Comma-separated channel types
-- `team_id` (string, optional) - Team ID for org-wide apps
+```
+- `name` (string, required) — Channel name (lowercase, no spaces or special characters)
+- `is_private` (bool, optional) — Create as a private channel (default: false)
+- `description` (string, optional) — Channel description
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"channels": [],
-	"response_metadata": {
-		"next_cursor": ""
-	}
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/list_channels
-
-{
-	"oauth_token": "xoxp-...",
-	"limit": 50,
-	"types": "public_channel,private_channel"
+  "ok": true,
+  "channel": { "id": "C456", "name": "new-channel", "is_private": false }
 }
 ```
 
 </details>
 
-<details>
-<summary><code>create_channel</code> - Create a new channel.</summary>
 
-Creates a public or private channel, with optional description.
+<details>
+<summary><code>archive_channel</code> — Archive or unarchive a channel</summary>
+
+Archives or unarchives a Slack channel.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `name` (string, required) - Channel name
-- `is_private` (boolean, optional) - Create private channel
-- `description` (string, optional) - Channel description
+```
+- `channel` (string, required) — Channel ID
+- `archive` (bool, optional) — true to archive, false to unarchive (default: true)
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"channel": {
-		"id": "C123ABC456",
-		"name": "team-updates"
-	}
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/create_channel
-
-{
-	"oauth_token": "xoxp-...",
-	"name": "team-updates",
-	"is_private": false
+  "ok": true
 }
 ```
 
 </details>
 
-<details>
-<summary><code>archive_channel</code> - Archive or unarchive a channel.</summary>
 
-Archives channel when `archive=true`; unarchives when `archive=false`.
+<details>
+<summary><code>get_channel_info</code> — Get channel metadata</summary>
+
+Returns metadata for a specific channel including member count and settings.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `channel` (string, required) - Channel ID
-- `archive` (boolean, optional) - Archive toggle
+```
+- `channel` (string, required) — Channel ID
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/archive_channel
-
-{
-	"oauth_token": "xoxp-...",
-	"channel": "C123ABC456",
-	"archive": true
+  "ok": true,
+  "channel": {
+    "id": "C123",
+    "name": "general",
+    "num_members": 42,
+    "topic": { "value": "Company news" },
+    ...
+  }
 }
 ```
 
 </details>
 
-<details>
-<summary><code>get_channel_info</code> - Get metadata for a channel.</summary>
 
-Returns channel details including membership counts where available.
+<details>
+<summary><code>invite_users_to_channel</code> — Invite users to a channel</summary>
+
+Invites one or more users to an existing channel.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `channel` (string, required) - Channel ID
+```
+- `channel` (string, required) — Channel ID
+- `users` (list, required) — List of user IDs to invite
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"channel": {
-		"id": "C123ABC456"
-	}
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/get_channel_info
-
-{
-	"oauth_token": "xoxp-...",
-	"channel": "C123ABC456"
+  "ok": true,
+  "channel": { "id": "C123", "name": "general", "members": ["U123", "U456"] }
 }
 ```
 
 </details>
 
-<details>
-<summary><code>invite_users_to_channel</code> - Invite users to a channel.</summary>
 
-Invites one or more user IDs to the target channel.
+### Search & Discovery
+
+<details>
+<summary><code>search_files</code> — Search files across the workspace</summary>
+
+Searches files in the workspace by query and optional type filter.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `channel` (string, required) - Channel ID
-- `users` (array[string], required) - User IDs to invite
+```
+- `query` (string, optional) — Search query string
+- `sort` (string, optional) — Sort by: score or timestamp (default: score)
+- `sort_dir` (string, optional) — Sort direction: asc or desc (default: desc)
+- `count` (int, optional) — Number of results to return (default: 20)
+- `types` (string, optional) — File type filter (e.g., images, pdfs, docs)
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"channel": {
-		"id": "C123ABC456"
-	}
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/invite_users_to_channel
-
-{
-	"oauth_token": "xoxp-...",
-	"channel": "C123ABC456",
-	"users": ["U111", "U222"]
+  "ok": true,
+  "files": {
+    "total": 3,
+    "matches": [{ "name": "report.pdf", "url_private": "..." }]
+  }
 }
 ```
 
 </details>
 
-<details>
-<summary><code>search_files</code> - Search files across workspace.</summary>
 
-Searches Slack files by query, type, and sorting options.
+<details>
+<summary><code>map_channels</code> — List all channels with full metadata</summary>
+
+Fetches all channels in the workspace (with automatic pagination) and returns them with metadata.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `query` (string, optional) - Search query
-- `sort` (string, optional) - `score` or `timestamp`
-- `sort_dir` (string, optional) - `asc` or `desc`
-- `count` (integer, optional) - Number of results
-- `types` (string, optional) - File type filter
+```
+- `include_archived` (bool, optional) — Include archived channels (default: false)
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"files": {
-		"matches": []
-	}
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/search_files
-
-{
-	"oauth_token": "xoxp-...",
-	"query": "roadmap pdf",
-	"count": 10
+  "ok": true,
+  "channels": [{ "id": "C123", "name": "general", "num_members": 50 }, ...],
+  "total": 12
 }
 ```
 
 </details>
 
-<details>
-<summary><code>map_channels</code> - Enumerate channels with metadata.</summary>
 
-Paginates through channel listings and returns a combined map.
+<details>
+<summary><code>find_user</code> — Search for a user by name, email, or ID</summary>
+
+Looks up a user by their Slack ID, display name, real name, or email address.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `include_archived` (boolean, optional) - Include archived channels
+```
+- `query` (string, required) — User name, email address, or Slack user ID (e.g., U123ABC)
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"channels": [],
-	"total": 0
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/map_channels
-
-{
-	"oauth_token": "xoxp-...",
-	"include_archived": false
+  "ok": true,
+  "matches": [{ "id": "U123", "name": "jane", "real_name": "Jane Doe", ... }],
+  "total": 1
 }
 ```
 
 </details>
 
-<details>
-<summary><code>find_user</code> - Find a user by name, email, or ID.</summary>
 
-Performs direct ID lookup and fallback member filtering.
+<details>
+<summary><code>extract_threads</code> — Extract thread metadata from a channel</summary>
+
+Retrieves thread metadata (reply count, latest reply, original message) from recent messages in a channel.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `query` (string, required) - Name, email, or user ID
+```
+- `channel` (string, required) — Channel ID
+- `limit` (int, optional) — Number of messages to scan for threads (default: 10)
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"matches": [],
-	"total": 0
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/find_user
-
-{
-	"oauth_token": "xoxp-...",
-	"query": "alice@example.com"
+  "ok": true,
+  "threads": [
+    { "ts": "...", "user": "U123", "text": "...", "reply_count": 5, "latest_reply": "..." }
+  ]
 }
 ```
 
 </details>
 
-<details>
-<summary><code>extract_threads</code> - Extract thread metadata from a channel.</summary>
 
-Collects root messages that represent thread starters and returns summary fields.
+### Workspace & Users
+
+<details>
+<summary><code>list_users</code> — List workspace members</summary>
+
+Returns a paginated list of all users in the workspace.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `channel` (string, required) - Channel ID
-- `limit` (integer, optional) - Number of messages scanned
+```
+- `limit` (int, optional) — Users per page (1–100, default: 20)
+- `cursor` (string, optional) — Pagination cursor from a previous response
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"threads": [],
-	"note": "For full async summarization, implement polling with job ID"
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/extract_threads
-
-{
-	"oauth_token": "xoxp-...",
-	"channel": "C123ABC456",
-	"limit": 20
+  "ok": true,
+  "members": [{ "id": "U123", "name": "jane", "real_name": "Jane Doe", ... }],
+  "response_metadata": { "next_cursor": "cursor-string" }
 }
 ```
 
 </details>
 
-<details>
-<summary><code>list_users</code> - Get workspace roster.</summary>
 
-Lists users with pagination controls.
+<details>
+<summary><code>get_workspace_info</code> — Get workspace metadata</summary>
+
+Returns information about the Slack workspace including name, domain, and settings.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `limit` (integer, optional) - Users per page (1-100)
-- `cursor` (string, optional) - Pagination cursor
+```
+None
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"members": []
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/list_users
-
-{
-	"oauth_token": "xoxp-...",
-	"limit": 50
+  "ok": true,
+  "team": {
+    "id": "T123",
+    "name": "My Company",
+    "domain": "mycompany",
+    "email_domain": "mycompany.com"
+  }
 }
 ```
 
 </details>
 
-<details>
-<summary><code>get_workspace_info</code> - Get workspace metadata.</summary>
 
-Returns workspace details from Slack `team.info`.
+<details>
+<summary><code>get_user_presence</code> — Get user presence status</summary>
+
+Returns the current presence status (active or away) of a workspace user.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
+```
+- `user` (string, required) — Slack user ID (e.g., U123ABC456)
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"team": {
-		"id": "T123ABC456",
-		"name": "Workspace Name"
-	}
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/get_workspace_info
-
-{
-	"oauth_token": "xoxp-..."
+  "ok": true,
+  "presence": "active",
+  "online": true,
+  "auto_away": false
 }
 ```
 
 </details>
 
-<details>
-<summary><code>get_user_presence</code> - Get user presence status.</summary>
 
-Fetches active/away style presence for a given user ID.
+<details>
+<summary><code>health_check</code> — Check server readiness</summary>
+
+Verifies the server is operational. No authentication required.
 
 **Inputs:**
-
-- `oauth_token` (string, required) - Slack OAuth token
-- `user` (string, required) - Slack user ID
+```
+None
+```
 
 **Output:**
 
 ```json
 {
-	"ok": true,
-	"presence": "active"
-}
-```
-
-**Usage Example:**
-
-```bash
-POST /mcp/cl-slack-mcp/get_user_presence
-
-{
-	"oauth_token": "xoxp-...",
-	"user": "U123ABC456"
+  "status": "ok",
+  "server": "CL Slack MCP Server"
 }
 ```
 
 </details>
 
----
 
 ## API Parameters Reference
 
 <details>
-<summary><strong>Common Parameters</strong></summary>
+<summary><strong>Channel IDs vs Names</strong></summary>
 
-- `oauth_token` - Slack access token used for API authentication.
-- `channel` - Slack channel ID (for example, `C123ABC456`) or channel name where supported.
-- `ts` - Slack message timestamp identifier.
-- `thread_ts` - Parent message timestamp for thread operations.
-- `limit` - Page size/count for list and history operations.
-- `cursor` - Pagination cursor from `response_metadata.next_cursor`.
+Most tools accept either a channel ID or a channel name:
+
+```
+Channel ID:   C123ABC456   (preferred — stable even if channel is renamed)
+Channel name: #general     (convenient but can break if channel is renamed)
+```
+
+Use `list_channels` or `map_channels` to look up channel IDs.
 
 </details>
 
 <details>
-<summary><strong>Resource Formats</strong></summary>
+<summary><strong>Message Timestamps (ts)</strong></summary>
 
-**Channel Resource:**
-
-```
-Channel ID format: C########
-Example: C123ABC456
-```
-
-**User Resource:**
+Slack uses Unix timestamps with microseconds as unique message identifiers:
 
 ```
-User ID format: U######## or W########
-Example: U123ABC456
+Format:  1234567890.123456
+Example: 1712345678.000200
 ```
 
-**Message Resource:**
-
-```
-Message timestamp format: 1712000000.123456
-Example: 1712000000.123456
-```
+The `ts` field from any message response can be used to reply, update, delete, or identify a message. The `thread_ts` is the `ts` of the first message in a thread.
 
 </details>
-
----
-
-## Authentication Guide
 
 <details>
-<summary><strong>OAuth / API Key Setup</strong></summary>
+<summary><strong>Pagination</strong></summary>
 
-All tools require a valid Slack OAuth token. This server supports user tokens (`xoxp-...`) and bot tokens (`xoxb-...`).
+List tools that return large result sets support cursor-based pagination:
 
-### Step 1: Create Slack App
+- `cursor` — Pass the `next_cursor` value from `response_metadata` in the previous response
+- `limit` — Number of results per page (max: 100)
 
-1. Go to [Slack App Management](https://api.slack.com/apps)
-2. Create a new app from scratch
-3. Select your workspace
-
-### Step 2: Configure OAuth Credentials
-
-1. Open **OAuth & Permissions** in your app settings
-2. Copy **Client ID** and **Client Secret**
-3. Add redirect URL (HTTPS required), for example:
-4. `https://your-tunnel-host/slack/oauth/callback`
-
-### Step 3: Generate Token with Included Script
-
-Use `get_slack_oauth_token.py` from this repository.
-
-Example user token flow:
-
-```bash
-python3 get_slack_oauth_token.py \
-	--type user \
-	--oauth-flow standard \
-	--scopes search:read,channels:read,chat:write
-```
-
-The script supports:
-
-- `standard` flow: `/oauth/v2/authorize` + `oauth.v2.access`
-- `user-centric` flow: `/oauth/v2_user/authorize` + `oauth.v2.user.access`
-
-Refer to [Slack Authentication Guide](https://docs.slack.dev/authentication/installing-with-oauth) for full details.
-
-### Step 4: Required Scopes
-
-Ensure the token includes scopes required by the tools you will call.
-
-- `chat:write` - Send, update, delete, and reply to messages
-- `channels:read` - List and inspect public channels
-- `channels:history` - Read message history in public channels
-- `search:read` - Search workspace messages/files
-- `users:read` - List users and resolve identity metadata
-
-If you use private channels, DMs, MPIMs, and usergroups, add corresponding `groups:*`, `im:*`, `mpim:*`, and `usergroups:*` scopes.
+Omit `cursor` to start from the beginning.
 
 </details>
 
----
+<details>
+<summary><strong>Block Kit (Rich Formatting)</strong></summary>
+
+The `blocks` parameter accepts Slack Block Kit JSON for rich message formatting:
+
+```json
+[
+  {
+    "type": "section",
+    "text": { "type": "mrkdwn", "text": "*Hello!* This is bold." }
+  }
+]
+```
+
+Full Block Kit reference: [Slack Block Kit Builder](https://app.slack.com/block-kit-builder)
+
+</details>
+
 
 ## Troubleshooting
 
 <details>
-<summary><strong>Common Issues & Solutions</strong></summary>
+<summary><strong>Missing or Invalid Headers</strong></summary>
 
-### Missing or Invalid Token
-
-- **Cause:** `oauth_token` is missing, malformed, expired, or revoked
+- **Cause:** OAuth token not provided in request headers or incorrect format
 - **Solution:**
-	1. Generate a fresh token with `get_slack_oauth_token.py`
-	2. Confirm token prefix (`xoxp-` or `xoxb-`)
-	3. Verify token has required scopes
-
-### Missing Scope Errors
-
-- **Cause:** Token does not include scope required by the Slack endpoint
-- **Solution:**
-	1. Add needed scope in Slack app dashboard
-	2. Reinstall/reauthorize app
-	3. Generate a new token
-
-### bad_redirect_uri During OAuth
-
-- **Cause:** Redirect URI mismatch between authorize and token-exchange steps
-- **Solution:**
-	1. Ensure exact same redirect URI is used in both steps
-	2. Confirm redirect URL is added in Slack app settings
-	3. Use HTTPS tunnel (zrok/ngrok) and keep it running
-
-### App Requests Bot Install Unexpectedly
-
-- **Cause:** Bot scopes/features are configured in Slack app while attempting user-only flow
-- **Solution:**
-	1. Remove unneeded bot scopes/capabilities from app config
-	2. Use user-only scopes and rerun with `--type user`
-	3. Reinstall/reauthorize after configuration changes
-
-### MCP Server Not Reachable
-
-- **Cause:** Server transport/host/port mismatch
-- **Solution:**
-	1. Start server with expected transport
-	2. Confirm host/port arguments
-	3. Check client points to `/mcp` path for HTTP transport
+  1. Verify `Authorization: Bearer YOUR_TOKEN` and `X-Mewcp-Credential-Id: CREDENTIAL-ID` headers are present
+  2. Check your Slack OAuth credential is active in your MewCP account
 
 </details>
-
----
-
-## Resources
 
 <details>
-<summary><strong>External Documentation</strong></summary>
+<summary><strong>Insufficient Credits</strong></summary>
 
-- **[Slack API Documentation](https://api.slack.com/apis)** - Official Slack API overview
-- **[Slack OAuth Guide](https://docs.slack.dev/authentication/installing-with-oauth)** - OAuth installation and token flows
-- **[Slack Web API Reference](https://api.slack.com/methods)** - Endpoint reference for methods used by this server
-- **[FastMCP Docs](https://gofastmcp.com/v2/getting-started/welcome)** - FastMCP runtime and tool framework
+- **Cause:** API calls have exceeded your request limits
+- **Solution:**
+  1. Check credit usage in your Curious Layer dashboard
+  2. Upgrade to a paid plan or add credits for higher limits
+  3. Contact support for credit adjustments
+
+</details>
+
+<details>
+<summary><strong>Credential Not Connected</strong></summary>
+
+- **Cause:** No Slack credential linked to your account
+- **Solution:**
+  1. Go to **Credentials** in your MewCP dashboard
+  2. Connect your Slack workspace via OAuth
+  3. Retry the request with the correct `X-Mewcp-Credential-Id` header
+
+</details>
+
+<details>
+<summary><strong>Malformed Request Payload</strong></summary>
+
+- **Cause:** JSON payload is invalid or missing required fields
+- **Solution:**
+  1. Validate JSON syntax before sending
+  2. Ensure all required tool parameters are included
+  3. Check that `blocks` is a valid Slack Block Kit JSON array
+
+</details>
+
+<details>
+<summary><strong>Server Not Found</strong></summary>
+
+- **Cause:** Incorrect server name in the API endpoint
+- **Solution:**
+  1. Verify endpoint format: `{server-name}/mcp/{tool-name}`
+  2. Use correct server name from documentation
+  3. Check available servers in your Curious Layer account
+
+</details>
+
+<details>
+<summary><strong>Slack API Error</strong></summary>
+
+- **Cause:** Upstream Slack API returned an error
+- **Solution:**
+  1. Check Slack service status at [Slack Status](https://status.slack.com)
+  2. Verify your OAuth token has the required scopes for the operation (e.g. `chat:write`, `channels:read`)
+  3. Review the error message in the response — common errors: `not_in_channel`, `channel_not_found`, `missing_scope`
 
 </details>
 
 ---
+
+### Resources
+
+- **[Slack API Documentation](https://api.slack.com/docs)** — Official API reference
+- **[Slack Web API Methods](https://api.slack.com/methods)** — Complete method reference
+- **[Slack Block Kit Builder](https://app.slack.com/block-kit-builder)** — Visual block builder
+- **[FastMCP Docs](https://gofastmcp.com/v2/getting-started/welcome)** — FastMCP specification
+- **[FastMCP Credentials](https://pypi.org/project/fastmcp-credentials/)** — FastMCP Credentials package for credential handling

@@ -3,21 +3,6 @@
 from typing_extensions import TypedDict
 
 
-class OAuthTokenData(TypedDict, total=False):
-    """OAuth token data for Slack API authentication."""
-
-    token: str  # Bot token (xoxb-...) or User token (xoxp-...)
-    refresh_token: str
-    token_type: str  # "bot" or "user"
-    scope: str
-    bot_user_id: str
-    app_id: str
-    team_id: str
-    team_name: str
-    enterprise_id: str
-    expires_in: int
-
-
 class MessageData(TypedDict, total=False):
     """Message content structure."""
 

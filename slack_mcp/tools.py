@@ -32,9 +32,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Post a message to a Slack channel or direct message with text and optional blocks.",
     )
     def send_message(
-        oauth_token: str = Field(
-            ..., description="Slack OAuth token (xoxb-... or xoxp-...)"
-        ),
         channel: str = Field(
             ..., description="Channel ID or name (e.g., #general or C123ABC456)"
         ),
@@ -55,7 +52,7 @@ def register_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Post message to channel."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.chat_postMessage(
                 channel=channel,
@@ -78,7 +75,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Get message history from a channel with optional filtering.",
     )
     def read_messages(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         channel: str = Field(..., description="Channel ID or name"),
         limit: int = Field(default=20, description="Number of messages (1-100)"),
         oldest: Optional[str] = Field(
@@ -90,7 +86,7 @@ def register_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Get message history."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.conversations_history(
                 channel=channel,
@@ -112,7 +108,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Edit an existing message.",
     )
     def update_message(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         channel: str = Field(..., description="Channel ID"),
         ts: str = Field(..., description="Message timestamp"),
         text: Optional[str] = Field(default=None, description="New text (optional)"),
@@ -127,7 +122,7 @@ def register_tools(mcp: FastMCP) -> None:
                     {"ok": False, "error": "Either text or blocks required"}
                 )
 
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.chat_update(
                 channel=channel,
@@ -149,13 +144,12 @@ def register_tools(mcp: FastMCP) -> None:
         description="Delete a message.",
     )
     def delete_message(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         channel: str = Field(..., description="Channel ID"),
         ts: str = Field(..., description="Message timestamp"),
     ) -> str:
         """Delete message."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.chat_delete(channel=channel, ts=ts)
             return json.dumps(response.data)
@@ -172,7 +166,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Full-text search across workspace messages.",
     )
     def search_messages(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         query: str = Field(..., description="Search query"),
         sort: str = Field(default="score", description="Sort by score or timestamp"),
         sort_dir: str = Field(default="desc", description="asc or desc"),
@@ -180,7 +173,7 @@ def register_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Search messages."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.search_messages(
                 query=query,
@@ -202,7 +195,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Post a reply in a message thread.",
     )
     def reply_thread(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         channel: str = Field(..., description="Channel ID"),
         thread_ts: str = Field(..., description="Parent message timestamp"),
         text: str = Field(default="", description="Reply text"),
@@ -213,7 +205,7 @@ def register_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Reply to a thread."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.chat_postMessage(
                 channel=channel,
@@ -238,7 +230,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Browse channels in the workspace. Maps to conversations.list API.",
     )
     def list_channels(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         exclude_archived: bool = Field(
             default=True, description="Skip archived channels"
         ),
@@ -257,7 +248,7 @@ def register_tools(mcp: FastMCP) -> None:
     ) -> str:
         """List channels."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             kwargs = {
                 "exclude_archived": exclude_archived,
@@ -285,7 +276,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Create a new channel.",
     )
     def create_channel(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         name: str = Field(..., description="Channel name (lowercase, no spaces)"),
         is_private: bool = Field(default=False, description="Make private"),
         description: Optional[str] = Field(
@@ -294,7 +284,7 @@ def register_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Create channel."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             kwargs = {"name": name, "is_private": is_private}
             if description:
@@ -315,7 +305,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Archive or unarchive a channel.",
     )
     def archive_channel(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         channel: str = Field(..., description="Channel ID"),
         archive: bool = Field(
             default=True, description="True to archive, False to unarchive"
@@ -323,7 +312,7 @@ def register_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Archive/unarchive channel."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             if archive:
                 response = client.conversations_archive(channel=channel)
@@ -344,12 +333,11 @@ def register_tools(mcp: FastMCP) -> None:
         description="Get metadata for a channel.",
     )
     def get_channel_info(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         channel: str = Field(..., description="Channel ID"),
     ) -> str:
         """Get channel info."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.conversations_info(
                 channel=channel,
@@ -369,7 +357,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Invite users to a channel.",
     )
     def invite_users_to_channel(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         channel: str = Field(..., description="Channel ID"),
         users: list[str] = Field(..., description="List of user IDs"),
     ) -> str:
@@ -378,7 +365,7 @@ def register_tools(mcp: FastMCP) -> None:
             if not users:
                 return json.dumps({"ok": False, "error": "At least one user required"})
 
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.conversations_invite(
                 channel=channel,
@@ -400,7 +387,6 @@ def register_tools(mcp: FastMCP) -> None:
         description="Search files across workspace.",
     )
     def search_files(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         query: Optional[str] = Field(
             default=None, description="Search query (optional)"
         ),
@@ -411,7 +397,7 @@ def register_tools(mcp: FastMCP) -> None:
     ) -> str:
         """Search files."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             kwargs = {
                 "sort": sort,
@@ -438,12 +424,11 @@ def register_tools(mcp: FastMCP) -> None:
         description="List all channels with metadata.",
     )
     def map_channels(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         include_archived: bool = Field(default=False, description="Include archived"),
     ) -> str:
         """Map all channels."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             all_channels = []
             cursor = None
 
@@ -479,12 +464,11 @@ def register_tools(mcp: FastMCP) -> None:
         description="Search for a user by name, email, or ID.",
     )
     def find_user(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         query: str = Field(..., description="User name, email, or ID"),
     ) -> str:
         """Find user."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
 
             # Try direct lookup if looks like user ID
             if query.startswith("U") or query.startswith("W"):
@@ -529,13 +513,12 @@ def register_tools(mcp: FastMCP) -> None:
         description="Extract thread metadata.",
     )
     def extract_threads(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         channel: str = Field(..., description="Channel ID"),
         limit: int = Field(default=10, description="Number of threads"),
     ) -> str:
         """Extract threads."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.conversations_history(
                 channel=channel,
@@ -576,13 +559,12 @@ def register_tools(mcp: FastMCP) -> None:
         description="Get workspace roster.",
     )
     def list_users(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         limit: int = Field(default=20, description="Users per page (1-100)"),
         cursor: Optional[str] = Field(default=None, description="Pagination cursor"),
     ) -> str:
         """List users."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.users_list(
                 limit=min(limit, 100),
@@ -601,12 +583,10 @@ def register_tools(mcp: FastMCP) -> None:
         name="get_workspace_info",
         description="Get workspace metadata.",
     )
-    def get_workspace_info(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
-    ) -> str:
+    def get_workspace_info() -> str:
         """Get workspace info."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.team_info()
             return json.dumps(response.data)
@@ -623,12 +603,11 @@ def register_tools(mcp: FastMCP) -> None:
         description="Get user presence status.",
     )
     def get_user_presence(
-        oauth_token: str = Field(..., description="Slack OAuth token"),
         user: str = Field(..., description="User ID"),
     ) -> str:
         """Get user presence."""
         try:
-            client = get_client(oauth_token)
+            client = get_client()
             # API call directly in the tool
             response = client.users_getPresence(user=user)
             return json.dumps(response.data)

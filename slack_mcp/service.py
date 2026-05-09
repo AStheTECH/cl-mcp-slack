@@ -1,16 +1,13 @@
 """Slack API client factory."""
 
 from slack_sdk import WebClient
+from fastmcp_credentials import get_credentials
 
 
-def get_client(oauth_token: str) -> WebClient:
-    """
-    Factory function to create Slack WebClient with token.
+def get_client() -> WebClient:
+    cred = get_credentials()
 
-    Args:
-        oauth_token: Bot token (xoxb-...) or User token (xoxp-...)
+    if not cred.access_token:
+        raise ValueError("No OAuth access token available in credentials")
 
-    Returns:
-        Initialized WebClient instance
-    """
-    return WebClient(token=oauth_token)
+    return WebClient(token=cred.access_token)

@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-"""MCP Server for Slack API."""
-
 import logging
 
 from fastmcp import FastMCP
@@ -8,11 +5,16 @@ from fastmcp import FastMCP
 from slack_mcp.cli import parse_args
 from slack_mcp.config import configure_logging
 from slack_mcp.tools import register_tools
+from fastmcp_credentials import CredentialMiddleware, HeaderCredentialBackend
+
 
 configure_logging()
 logger = logging.getLogger("slack-mcp-server")
 
-mcp = FastMCP("CL Slack MCP Server")
+backend = HeaderCredentialBackend()
+mcp = FastMCP(
+    "CL Slack MCP Server", middleware=[CredentialMiddleware(backend, "oauth")]
+)
 register_tools(mcp)
 
 # Expose ASGI app for hosting platform's (e.g. Vercel) Python runtime.
